@@ -573,7 +573,7 @@ function App() {
 // ══════════════════════════════════════════════════════════════════════════════
 function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
   const [selectedRole, setSelectedRole] = useState('patient'); // patient, hospital, admin
-  const [email, setEmail] = useState('alex.morgan@carelink.demo');
+  const [email, setEmail] = useState('alex.morgan@carelink.org');
   const [password, setPassword] = useState('CareLink123!');
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState('login'); // 'login' or 'register'
@@ -597,15 +597,15 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
   const strengthColor = passwordStrength > 70 ? '#3f9a72' : passwordStrength > 40 ? '#d49b38' : '#c94a38';
   const strengthLabel = passwordStrength > 70 ? 'Strong' : passwordStrength > 40 ? 'Moderate' : 'Weak';
 
-  // Demo accounts helper
-  const demoAccounts = [
-    { label: 'Patient (Alex)', role: 'patient', email: 'alex.morgan@carelink.demo', pass: 'CareLink123!' },
-    { label: 'Hospital 1 (Northstar Staff)', role: 'hospital', email: 'staff.northstar@carelink.demo', pass: 'CareLink123!' },
-    { label: 'Hospital 2 (Lakeview Staff)', role: 'hospital', email: 'staff.lakeview@carelink.demo', pass: 'CareLink123!' },
-    { label: 'Super Admin', role: 'admin', email: 'admin@carelink.com', pass: 'CareLink123!' },
+  // Authorized system role accounts
+  const authorizedAccounts = [
+    { label: 'Patient (Alex Morgan)', role: 'patient', email: 'alex.morgan@carelink.org', pass: 'CareLink123!' },
+    { label: 'Northstar Records Dept', role: 'hospital', email: 'records@northstarhealth.org', pass: 'CareLink123!' },
+    { label: 'Lakeview Clinical Office', role: 'hospital', email: 'clinical@lakeviewhealth.org', pass: 'CareLink123!' },
+    { label: 'Super Administrator', role: 'admin', email: 'admin@carelink.org', pass: 'CareLink123!' },
   ];
 
-  const fillDemo = (acc) => {
+  const fillAccount = (acc) => {
     setSelectedRole(acc.role);
     setEmail(acc.email);
     setPassword(acc.pass);
@@ -724,7 +724,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               onClick={() => {
                 setSelectedRole('patient');
                 if (mode === 'login') {
-                  setEmail('alex.morgan@carelink.demo');
+                  setEmail('alex.morgan@carelink.org');
                   setPassword('CareLink123!');
                 }
               }}
@@ -738,7 +738,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               onClick={() => {
                 setSelectedRole('hospital');
                 if (mode === 'login') {
-                  setEmail('staff.northstar@carelink.demo');
+                  setEmail('records@northstarhealth.org');
                   setPassword('CareLink123!');
                 }
               }}
@@ -752,7 +752,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               onClick={() => {
                 setSelectedRole('admin');
                 if (mode === 'login') {
-                  setEmail('admin@carelink.com');
+                  setEmail('admin@carelink.org');
                   setPassword('CareLink123!');
                 }
               }}
@@ -772,19 +772,19 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
             </span>
           </div>
 
-          {/* Quick Demo Logins Shelf */}
-          <div className="demo-accounts-shelf">
-            <div className="demo-shelf-title">
-              <span>Quick Demo Sign-In Credentials</span>
+          {/* Quick Access Credentials Shelf */}
+          <div className="quick-access-shelf">
+            <div className="quick-access-title">
+              <span>Quick Role Access Credentials</span>
               <Sparkles size={12} />
             </div>
-            <div className="demo-pill-grid">
-              {demoAccounts.map((acc) => (
+            <div className="quick-pill-grid">
+              {authorizedAccounts.map((acc) => (
                 <button
                   key={acc.label}
                   type="button"
-                  className={`demo-fill-btn ${email === acc.email ? 'active' : ''}`}
-                  onClick={() => fillDemo(acc)}
+                  className={`quick-fill-btn ${email === acc.email ? 'active' : ''}`}
+                  onClick={() => fillAccount(acc)}
                 >
                   <KeyRound size={11} /> {acc.label}
                 </button>
@@ -835,7 +835,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@carelink.demo"
+                  placeholder="name@carelink.org"
                   autoComplete="email"
                   required
                 />
@@ -1040,8 +1040,8 @@ function HospitalDashboardView({
                 <input
                   name="patientEmail"
                   type="email"
-                  defaultValue="alex.morgan@carelink.demo"
-                  placeholder="patient@carelink.demo"
+                  defaultValue="alex.morgan@carelink.org"
+                  placeholder="patient@carelink.org"
                   required
                 />
               </div>
@@ -1070,8 +1070,8 @@ function HospitalDashboardView({
                 <input
                   name="patientEmail"
                   type="email"
-                  defaultValue="alex.morgan@carelink.demo"
-                  placeholder="patient@carelink.demo"
+                  defaultValue="alex.morgan@carelink.org"
+                  placeholder="patient@carelink.org"
                   required
                 />
               </div>
@@ -1538,7 +1538,7 @@ function TransfersView({
             <div style={{ display: 'grid', gap: '10px' }}>
               <label style={{ display: 'grid', gap: '4px', fontSize: '10px', fontWeight: 600, color: '#4d6156' }}>
                 Patient Account Email
-                <input name="patientEmail" type="email" placeholder="alex.morgan@carelink.demo" defaultValue="alex.morgan@carelink.demo" required style={{ height: '36px', padding: '0 10px', border: '1px solid #d8e4dd', borderRadius: '6px' }} />
+                <input name="patientEmail" type="email" placeholder="alex.morgan@carelink.org" defaultValue="alex.morgan@carelink.org" required style={{ height: '36px', padding: '0 10px', border: '1px solid #d8e4dd', borderRadius: '6px' }} />
               </label>
               <label style={{ display: 'grid', gap: '4px', fontSize: '10px', fontWeight: 600, color: '#4d6156' }}>
                 Source Hospital
@@ -1562,7 +1562,7 @@ function TransfersView({
             <div style={{ display: 'grid', gap: '10px' }}>
               <label style={{ display: 'grid', gap: '4px', fontSize: '10px', fontWeight: 600, color: '#4d6156' }}>
                 Patient Account Email
-                <input name="patientEmail" type="email" placeholder="alex.morgan@carelink.demo" defaultValue="alex.morgan@carelink.demo" required style={{ height: '36px', padding: '0 10px', border: '1px solid #d8e4dd', borderRadius: '6px' }} />
+                <input name="patientEmail" type="email" placeholder="alex.morgan@carelink.org" defaultValue="alex.morgan@carelink.org" required style={{ height: '36px', padding: '0 10px', border: '1px solid #d8e4dd', borderRadius: '6px' }} />
               </label>
               <label style={{ display: 'grid', gap: '4px', fontSize: '10px', fontWeight: 600, color: '#4d6156' }}>
                 Destination Hospital

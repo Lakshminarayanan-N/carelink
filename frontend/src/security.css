@@ -210,34 +210,34 @@
   margin-bottom: 16px;
 }
 
-/* Demo Quick Logins */
-.demo-accounts-shelf {
+/* Quick Role Logins */
+.quick-access-shelf {
   background: #fafcfb;
-  border: 1px dashed #cfded6;
+  border: 1px solid #d7e4dc;
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 20px;
 }
 
-.demo-shelf-title {
+.quick-access-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 10px;
   font-weight: 700;
-  color: #62786e;
+  color: #556c62;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 
-.demo-pill-grid {
+.quick-pill-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.demo-fill-btn {
+.quick-fill-btn {
   border: 1px solid #d4e3dc;
   background: #ffffff;
   color: #335948;
@@ -252,13 +252,13 @@
   cursor: pointer;
 }
 
-.demo-fill-btn:hover {
+.quick-fill-btn:hover {
   background: #ebf5ef;
   border-color: #a9cfbe;
   color: #1f4a38;
 }
 
-.demo-fill-btn.active {
+.quick-fill-btn.active {
   background: #2b5c47;
   color: #fff;
   border-color: #2b5c47;

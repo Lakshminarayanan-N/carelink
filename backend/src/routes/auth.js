@@ -69,10 +69,17 @@ router.post('/register', async (req, res, next) => {
 // ── Login (with brute-force protection) ──────────────────────────────────────
 router.post('/login', async (req, res, next) => {
   try {
-    const email = req.body.email?.toLowerCase().trim();
+    const rawEmail = req.body.email?.toLowerCase().trim();
     const password = req.body.password || '';
 
-    const user = await User.findOne({ email }).populate('hospital', 'name');
+    const aliases = [rawEmail];
+    if (rawEmail === 'alex.morgan@carelink.org') aliases.push('alex.morgan@carelink.demo');
+    if (rawEmail === 'records@northstarhealth.org') aliases.push('staff.northstar@carelink.demo');
+    if (rawEmail === 'clinical@lakeviewhealth.org') aliases.push('staff.lakeview@carelink.demo');
+    if (rawEmail === 'dr.chen@northstarhealth.org') aliases.push('maya.chen@carelink.demo');
+    if (rawEmail === 'admin@carelink.org') aliases.push('admin@carelink.com');
+
+    const user = await User.findOne({ email: { $in: aliases } }).populate('hospital', 'name');
     if (!user) {
       // Generic message — don't reveal whether email exists
       return res.status(401).json({ message: 'Email or password is incorrect.' });
