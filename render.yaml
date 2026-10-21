@@ -1,0 +1,37 @@
+services:
+  # ── Backend API (Node/Express) ───────────────────────────────────────────────
+  - type: web
+    name: carelink-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: NODE_ENV
+        value: production
+      # Set these in the Render dashboard (they contain secrets):
+      - key: MONGODB_URI
+        sync: false          # prompts you to fill in Render dashboard
+      - key: JWT_SECRET
+        sync: false          # prompts you to fill in Render dashboard
+      - key: CLIENT_ORIGIN
+        sync: false          # set to your Render Static Site URL after it deploys
+
+  # ── Frontend (Vite React SPA) ────────────────────────────────────────────────
+  - type: web
+    name: carelink-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        sync: false          # set to https://carelink-api.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html   # SPA fallback — all routes → index.html

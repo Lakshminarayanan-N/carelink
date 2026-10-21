@@ -1,0 +1,28 @@
+.share-disclosure,.share-request-form,.share-list{background:#fff;border:1px solid var(--line);border-radius:11px;margin-bottom:16px}
+.share-disclosure{display:flex;gap:12px;padding:15px;color:#638a77;background:#f4f8f5}
+.share-disclosure>svg{flex:0 0 auto;margin-top:1px}
+.share-disclosure div,.share-item-copy{display:grid;gap:5px}
+.share-disclosure b,.share-request-form h2,.share-list-heading h2{margin:0;color:#40574b;font:700 13px var(--serif)}
+.share-disclosure span,.share-request-form p,.share-item-copy span,.share-item-copy small{color:#7d8c83;font-size:10px;line-height:1.55}
+.share-request-form{padding:18px}
+.share-request-form>div:first-child p{margin:6px 0 14px}
+.share-form-fields{display:grid;grid-template-columns:1fr 1fr auto;align-items:end;gap:10px}
+.share-form-fields label{display:grid;gap:6px;color:#64736b;font-size:10px;font-weight:600}
+.share-form-fields input,.share-form-fields select{height:37px;min-width:0;padding:0 10px;border:1px solid #e2e9e5;border-radius:7px;background:#fff;color:#405148;font-size:10px}
+.share-list{overflow:hidden}
+.share-list-heading{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #edf1ee}
+.share-list-heading>span{color:#8b9890;font-size:9px}
+.share-empty{padding:20px;color:#87948e;font-size:10px}
+.share-item{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid #edf1ee}
+.share-item:last-child{border-bottom:0}
+.share-item-icon{width:33px;height:33px;display:grid;place-items:center;flex:0 0 auto;border-radius:9px;background:#edf4f0;color:#5d8b75}
+.share-item-copy{min-width:0;flex:1}
+.share-item-copy b{color:#465950;font-size:10px}
+.share-item-copy small{font-size:9px}
+.share-status{flex:0 0 auto;border-radius:20px;padding:5px 8px;background:#f1f4f2;color:#75857b;font-size:8px;font-weight:600}
+.share-status.requested{background:#fff5e9;color:#a27742}
+.share-status.approved{background:#eaf4ed;color:#548265}
+.share-status.rejected,.share-status.revoked{background:#f7eeee;color:#9a6e6e}
+.share-item-actions{display:flex;align-items:center;gap:7px}
+.share-item-actions .btn{min-height:32px;padding:0 10px;font-size:9px}
+@media(max-width:780px){.share-form-fields{grid-template-columns:1fr}.share-form-fields .btn{justify-self:start}.share-item{align-items:flex-start;flex-wrap:wrap;padding:13px}.share-item-copy{flex-basis:calc(100% - 48px)}.share-status{margin-left:45px}.share-item-actions{margin-left:45px;flex-wrap:wrap}.share-list-heading{padding:14px}}
