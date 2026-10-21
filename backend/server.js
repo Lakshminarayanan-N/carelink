@@ -30,10 +30,20 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = process.env.PORT || 4000;
+
+// Connect to MongoDB (needed for both serverless and traditional)
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
-    .then(() => app.listen(port, () => console.log(`CareLink API listening on ${port}`)))
+    .then(() => {
+      // Only start a listener when NOT running on Vercel serverless
+      if (!process.env.VERCEL) {
+        app.listen(port, () => console.log(`CareLink API listening on ${port}`));
+      }
+    })
     .catch((error) => { console.error('MongoDB connection failed:', error.message); process.exit(1); });
-} else {
+} else if (!process.env.VERCEL) {
   app.listen(port, () => console.log(`CareLink API listening on ${port} (database not configured)`));
 }
+
+// Export for Vercel serverless
+export default app;
