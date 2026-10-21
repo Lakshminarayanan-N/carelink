@@ -1,0 +1,760 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   CareLink Enterprise Healthcare Security & Role-Based Workspaces Stylesheet
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── High-Security Login Screen ────────────────────────────────────────────── */
+.login-page-wrapper {
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 15%, #ebf5f0 0%, #f7faf8 45%, #eef4f1 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.login-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto 20px;
+}
+
+.login-security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffffdd;
+  border: 1px solid #d4e5dc;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: #3b6b59;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(38, 77, 60, 0.05);
+}
+
+.login-security-badge svg {
+  color: #3f8f6f;
+}
+
+.login-container {
+  max-width: 1060px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 36px;
+  align-items: center;
+}
+
+/* Left Hero Banner */
+.login-hero {
+  padding: 20px;
+}
+
+.login-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e2f0e8;
+  color: #2e6951;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+
+.login-hero h1 {
+  font-family: var(--serif, 'Manrope', sans-serif);
+  font-size: 38px;
+  line-height: 1.15;
+  color: #1e362d;
+  letter-spacing: -1.2px;
+  margin: 0 0 16px;
+}
+
+.login-hero h1 span {
+  color: #3f7b64;
+}
+
+.login-hero-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5d7369;
+  margin: 0 0 24px;
+  max-width: 440px;
+}
+
+.security-highlights {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.security-highlight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffffb3;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e1ebe5;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.security-highlight-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #e8f4ed;
+  color: #327559;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.security-highlight-text b {
+  display: block;
+  font-size: 12px;
+  color: #2a4137;
+  margin-bottom: 2px;
+}
+
+.security-highlight-text span {
+  font-size: 11px;
+  color: #697d74;
+  line-height: 1.4;
+}
+
+/* Right Card */
+.login-card {
+  background: #ffffff;
+  border: 1px solid #dce8e1;
+  box-shadow: 0 20px 48px rgba(34, 60, 48, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02);
+  border-radius: 18px;
+  padding: 32px 30px;
+  position: relative;
+}
+
+.login-card-head {
+  margin-bottom: 22px;
+}
+
+.login-card-head h2 {
+  font-family: var(--serif, 'Manrope', sans-serif);
+  font-size: 22px;
+  color: #243c32;
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+}
+
+.login-card-head p {
+  margin: 0;
+  font-size: 12px;
+  color: #7b8e85;
+}
+
+/* Role Selector Tabs */
+.role-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: #f2f6f4;
+  padding: 4px;
+  border-radius: 11px;
+  margin-bottom: 20px;
+}
+
+.role-tab-btn {
+  border: 0;
+  background: transparent;
+  padding: 9px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #647a70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.role-tab-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.role-tab-btn.active {
+  background: #ffffff;
+  color: #265541;
+  box-shadow: 0 3px 8px rgba(31, 58, 46, 0.08);
+}
+
+.role-banner-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #edf5f0;
+  border-left: 3px solid #3c7d62;
+  padding: 8px 12px;
+  border-radius: 0 7px 7px 0;
+  font-size: 11px;
+  color: #3b6151;
+  margin-bottom: 16px;
+}
+
+/* Demo Quick Logins */
+.demo-accounts-shelf {
+  background: #fafcfb;
+  border: 1px dashed #cfded6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+}
+
+.demo-shelf-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  color: #62786e;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.demo-pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-fill-btn {
+  border: 1px solid #d4e3dc;
+  background: #ffffff;
+  color: #335948;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.demo-fill-btn:hover {
+  background: #ebf5ef;
+  border-color: #a9cfbe;
+  color: #1f4a38;
+}
+
+.demo-fill-btn.active {
+  background: #2b5c47;
+  color: #fff;
+  border-color: #2b5c47;
+}
+
+/* Security Form */
+.security-input-group {
+  margin-bottom: 15px;
+}
+
+.security-input-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #40574c;
+  margin-bottom: 6px;
+}
+
+.security-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.security-input-wrap input {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid #dce6e0;
+  border-radius: 8px;
+  padding: 0 38px 0 12px;
+  font-size: 12px;
+  color: #273b32;
+  background: #fbfdfc;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.security-input-wrap input:focus {
+  border-color: #4c8a70;
+  box-shadow: 0 0 0 3px rgba(76, 138, 112, 0.15);
+  outline: none;
+}
+
+.security-eye-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: 0;
+  color: #879b90;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.security-eye-btn:hover {
+  color: #385749;
+}
+
+/* Strength Meter */
+.password-meter-wrap {
+  margin-top: 6px;
+}
+
+.password-meter-bar {
+  height: 4px;
+  background: #e7eee9;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.password-meter-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.password-meter-text {
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  color: #798c82;
+}
+
+/* Error & Alert */
+.auth-alert-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.auth-alert-box.danger {
+  background: #fdf2f0;
+  border: 1px solid #f6cfc7;
+  color: #a43a29;
+}
+
+.auth-alert-box.warning {
+  background: #fff9ed;
+  border: 1px solid #fae1b4;
+  color: #9c6c19;
+}
+
+.auth-alert-box.success {
+  background: #edf8f2;
+  border: 1px solid #c7e9d7;
+  color: #246d49;
+}
+
+.btn-security-submit {
+  width: 100%;
+  height: 44px;
+  background: #316c54;
+  color: #ffffff;
+  border: 0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(49, 108, 84, 0.25);
+}
+
+.btn-security-submit:hover:not(:disabled) {
+  background: #255843;
+  transform: translateY(-1px);
+}
+
+.btn-security-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.login-card-foot {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #7d9087;
+  border-top: 1px solid #edf2ee;
+  padding-top: 14px;
+}
+
+.login-card-foot button {
+  background: none;
+  border: 0;
+  color: #3a755d;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.login-card-foot button:hover {
+  text-decoration: underline;
+}
+
+.login-footer-strip {
+  text-align: center;
+  font-size: 11px;
+  color: #8c9e96;
+  margin-top: 30px;
+}
+
+/* ── Universal Header / Topbar Logout Button ───────────────────────────────── */
+.topbar-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff4f2;
+  border: 1px solid #f7d1cb;
+  color: #ad3d2f;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 7px 13px;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+
+.topbar-logout-btn:hover {
+  background: #fbe3df;
+  border-color: #eeaca2;
+  color: #8e2b1f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(173, 61, 47, 0.12);
+}
+
+.profile-logout-btn {
+  border: 1px solid #ebd4d0;
+  background: #fbf5f4;
+  color: #aa3d30;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+  transition: 0.15s;
+}
+
+.profile-logout-btn:hover {
+  background: #f6deda;
+  color: #842519;
+}
+
+/* ── Hospital Facility Header Banner ────────────────────────────────────────── */
+.hospital-badge-banner {
+  background: linear-gradient(90deg, #244639 0%, #2f5f4d 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 16px rgba(36, 70, 57, 0.15);
+}
+
+.hospital-badge-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hospital-badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
+  color: #a8dfc8;
+}
+
+.hospital-badge-info h2 {
+  font-family: var(--serif, 'Manrope', sans-serif);
+  font-size: 17px;
+  margin: 0 0 3px;
+  color: #ffffff;
+}
+
+.hospital-badge-info span {
+  font-size: 11px;
+  color: #b7d6c9;
+}
+
+.hospital-isolation-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 13px;
+  font-size: 10px;
+  color: #b6edd8;
+  font-weight: 600;
+}
+
+/* ── Cross-Hospital Transfer Tabs & Cards ──────────────────────────────────── */
+.transfer-hub-card {
+  background: #ffffff;
+  border: 1px solid #e3ede7;
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 3px 12px rgba(30, 55, 42, 0.04);
+}
+
+.transfer-hub-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #edf2ee;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.transfer-hub-head h3 {
+  font-family: var(--serif, 'Manrope', sans-serif);
+  font-size: 15px;
+  color: #243c32;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transfer-mode-selector {
+  display: flex;
+  gap: 8px;
+  background: #f1f6f3;
+  padding: 3px;
+  border-radius: 9px;
+}
+
+.transfer-mode-btn {
+  border: 0;
+  background: transparent;
+  color: #61776d;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.transfer-mode-btn.active {
+  background: #ffffff;
+  color: #245842;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.transfer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.transfer-form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b6256;
+  margin-bottom: 6px;
+}
+
+.transfer-form-field input,
+.transfer-form-field select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #d8e4dd;
+  background: #fbfdfc;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 12px;
+  color: #2f443a;
+  box-sizing: border-box;
+}
+
+/* ── Admin Master Console ─────────────────────────────────────────────────── */
+.admin-badge-banner {
+  background: linear-gradient(90deg, #1f2a37 0%, #374151 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.admin-badge-banner h2 {
+  font-family: var(--serif, 'Manrope', sans-serif);
+  font-size: 17px;
+  margin: 0 0 3px;
+  color: #ffffff;
+}
+
+.admin-badge-banner span {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.admin-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e1e9e4;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+
+.admin-filter-bar label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b6055;
+  white-space: nowrap;
+}
+
+.admin-filter-bar select {
+  height: 34px;
+  border: 1px solid #d4ded8;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #2b3d35;
+  background: #fcfdfc;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: left;
+}
+
+.admin-table th {
+  background: #f7faf8;
+  color: #556c60;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e6ece8;
+  letter-spacing: 0.3px;
+}
+
+.admin-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eff3f0;
+  color: #3b4e45;
+  vertical-align: middle;
+}
+
+.admin-table tr:hover td {
+  background: #fbfdfb;
+}
+
+.hospital-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #edf5f1;
+  color: #2d6b52;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.user-role-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.user-role-badge.admin {
+  background: #f0eef7;
+  color: #644fa6;
+}
+
+.user-role-badge.hospital {
+  background: #eaf4ef;
+  color: #286b50;
+}
+
+.user-role-badge.doctor {
+  background: #eaf0f7;
+  color: #2b598b;
+}
+
+.user-role-badge.patient {
+  background: #fdf5ea;
+  color: #925f23;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .login-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .login-hero {
+    display: none;
+  }
+  .transfer-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .hospital-badge-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
