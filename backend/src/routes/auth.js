@@ -23,11 +23,13 @@ const safeUser = (user) => ({
   isActive: user.isActive,
 });
 
+const JWT_SECRET = process.env.JWT_SECRET || '89b8b40ee7b5dab7b568c02322751c7720d487decb5d67418335ee90b0dd3ecce04b6fff260fe884f03b1356cb792129';
+
 const issueToken = (user) =>
   jwt.sign(
     { sub: user.id, role: user.role, hospitalId: user.hospital?.toString() },
-    process.env.JWT_SECRET,
-    { expiresIn: '8h' }   // Shorter expiry for security
+    JWT_SECRET,
+    { expiresIn: '8h' }
   );
 
 // ── Register ─────────────────────────────────────────────────────────────────

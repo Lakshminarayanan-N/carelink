@@ -8,7 +8,9 @@ import {
   Stethoscope, UserCheck, UserRound, Users, Video, X
 } from 'lucide-react';
 
-const API_ROOT = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_ROOT = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? 'https://backend-nine-beta-29.vercel.app/api'
+  : 'http://localhost:4000/api');
 
 const apiRequest = (path, session, options = {}) => fetch(`${API_ROOT}${path}`, {
   ...options,
