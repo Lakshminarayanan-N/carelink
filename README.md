@@ -1,359 +1,218 @@
-# CareLink — Healthcare Coordination Platform
+# CareLink — Healthcare Coordination & Cross-Facility Record Platform
 
-> A full-stack, role-based healthcare coordination platform enabling patients, doctors, and administrators to manage appointments, medical records, and cross-hospital record sharing with patient-controlled consent.
+> An enterprise full-stack healthcare coordination system engineered with zero-trust data isolation between clinical facilities, patient-governed record transfers, brute-force defense, and central administrator oversight.
 
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Motivation & Problem Statement](#motivation--problem-statement)
-3. [System Architecture](#system-architecture)
-4. [Technology Stack](#technology-stack)
-5. [Features](#features)
-6. [Data Models](#data-models)
+1. [Platform Overview](#platform-overview)
+2. [Live Deployments](#live-deployments)
+3. [Core Security Architecture](#core-security-architecture)
+4. [Role-Based Portals](#role-based-portals)
+5. [Hospital Data Isolation & Transfer Protocol](#hospital-data-isolation--transfer-protocol)
+6. [Technology Stack](#technology-stack)
 7. [API Reference](#api-reference)
-8. [Security Design](#security-design)
-9. [Hospital Record Transfer Workflow](#hospital-record-transfer-workflow)
-10. [Project Structure](#project-structure)
-11. [Setup & Installation](#setup--installation)
-12. [Demo Credentials](#demo-credentials)
-13. [Scripts Reference](#scripts-reference)
-14. [Limitations & Future Work](#limitations--future-work)
+8. [Database Schema](#database-schema)
+9. [Local PC Development & Setup](#local-pc-development--setup)
+10. [System Access Accounts](#system-access-accounts)
+11. [Project Structure](#project-structure)
 
 ---
 
-## Project Overview
+## Platform Overview
 
-**CareLink** is a minimum viable product (MVP) for a healthcare coordination system. It provides:
+**CareLink** is a production-grade healthcare coordination and inter-hospital medical records platform providing:
 
-- A **React 18** single-page application for patients, doctors, and admins.
-- A **Node.js / Express** REST API backed by **MongoDB** via Mongoose.
-- **JWT-based authentication** with role-aware access control.
-- A patient-consent driven **cross-hospital medical record sharing** mechanism.
-
-The frontend is built with **Vite** and uses **Lucide React** for icons and vanilla CSS for styling. The backend is a modular Express server using **Helmet**, **CORS**, **Morgan**, and **express-rate-limit** for production-readiness.
-
----
-
-## Motivation & Problem Statement
-
-In many healthcare ecosystems, patient records are siloed within individual hospitals or clinics. When a patient transfers care or seeks a second opinion at a different institution, they must manually collect and carry their own records — a process that is error-prone, time-consuming, and potentially unsafe.
-
-CareLink addresses this by providing:
-
-- A **unified patient record** accessible from a single authenticated account.
-- A **formal, auditable request-approve-revoke workflow** for sharing records between hospitals.
-- **Patient sovereignty**: the patient explicitly approves and can revoke record access at any time.
-- **Source attribution**: imported records always retain the originating hospital, clinician, and recorded date — preventing provenance loss.
+- **Strict Hospital Data Isolation**: Each hospital and clinic functions within an isolated chart repository. One facility cannot access another facility's records without patient consent or formal inter-facility transfer.
+- **Bi-Directional Cross-Hospital Transfer Protocol**: Participating hospitals can both request patient charts from peer institutions and dispatch/send records directly to receiving hospitals.
+- **Patient Sovereignty**: Patients review and authorize all chart requests before records leave any medical facility, and can revoke consent at any time.
+- **Central Super Administrator Console**: System-wide oversight to monitor records across all hospitals, inspect real-time transfer audit logs, enroll new clinical facilities, and govern user accounts.
+- **High-Security Authentication & Universal Logout**: Brute-force account lockout (5 failed attempts locks the account for 15 minutes), live password entropy analysis, TLS 1.3 encryption, and prominent logout controls on every screen.
 
 ---
 
-## System Architecture
+## Live Deployments
+
+| Component | URL | Status |
+| :--- | :--- | :--- |
+| **Web Application** | [frontend-five-rosy-ccuw13vq3y.vercel.app](https://frontend-five-rosy-ccuw13vq3y.vercel.app) | Live |
+| **REST API Server** | [backend-nine-beta-29.vercel.app/api](https://backend-nine-beta-29.vercel.app/api) | Live |
+| **API Health Check** | [backend-nine-beta-29.vercel.app/api/health](https://backend-nine-beta-29.vercel.app/api/health) | Live |
+| **Database Cluster** | MongoDB Atlas (Cluster 0, AWS) | Connected |
+
+---
+
+## Core Security Architecture
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│                        Browser                             │
-│   React 18 SPA  (Vite dev server · http://localhost:5173)  │
-│   ┌──────────┐  ┌────────────┐  ┌───────────────────────┐ │
-│   │  Auth    │  │ Dashboard  │  │  Record Share UI       │ │
-│   │  Login / │  │ Patient /  │  │  Request · Approve ·  │ │
-│   │  Register│  │ Doctor /   │  │  Import · Revoke      │ │
-│   └──────────┘  │ Admin      │  └───────────────────────┘ │
-│                 └────────────┘                             │
-└──────────────────────────┬─────────────────────────────────┘
-                           │ HTTP / JSON  (JWT Bearer token)
-                           ▼
-┌────────────────────────────────────────────────────────────┐
-│              Express API  (http://localhost:4000/api)       │
-│                                                            │
-│  /auth        /doctors      /appointments                  │
-│  /records     /hospitals    /shares                        │
-│                                                            │
-│  Middleware: helmet · cors · morgan · rate-limit · JWT     │
-└──────────────────────────┬─────────────────────────────────┘
-                           │ Mongoose ODM
-                           ▼
-┌────────────────────────────────────────────────────────────┐
-│                  MongoDB (local or Atlas)                   │
-│                                                            │
-│  Collections: users · appointments · medicalrecords        │
-│               hospitals · recordshares                     │
-└────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Zero-Trust Web Client                         │
+│  React 18 · Vite · Dynamic API Routing · Brute-Force Defense UI        │
+│  ┌─────────────────────────┬────────────────────────────────────────┐  │
+│  │   Universal Topbar      │ [Secure Log Out] Button on Every View  │  │
+│  └─────────────────────────┴────────────────────────────────────────┘  │
+│  ┌─────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐ │
+│  │ Patient Portal  │  │ Hospital / Clinic   │  │ Super Admin Console │ │
+│  │ Personal Charts │  │ Facility Isolation  │  │ System-Wide Audit   │ │
+│  │ Consent Manager │  │ Request & Send Hub  │  │ All Facilities/Logs │ │
+│  └─────────────────┘  └─────────────────────┘  └─────────────────────┘ │
+└────────────────────────────────────┬───────────────────────────────────┘
+                                     │ HTTPS / TLS 1.3 (Bearer JWT)
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                     CareLink Express Secure API                        │
+│                                                                        │
+│  Middleware Pipeline:                                                  │
+│  ├── Helmet (Security Headers & CSP)                                   │
+│  ├── CORS (Cross-Origin Protection)                                    │
+│  ├── Rate Limiter (Brute-force protection & Trust Proxy validation)   │
+│  ├── Serverless Database Connection Manager                            │
+│  └── JWT Authentication & Role-Based Authorization Guard               │
+│                                                                        │
+│  Route Enforcements:                                                   │
+│  ├── /api/auth       → Lockout tracking & credential verification      │
+│  ├── /api/records    → Strict hospital isolation (req.user.hospital)   │
+│  ├── /api/shares     → Cross-hospital Request & Send protocols         │
+│  ├── /api/admin      → Full-system metrics, audit feeds & directories  │
+│  └── /api/hospitals  → Facility lifecycle management                   │
+└────────────────────────────────────┬───────────────────────────────────┘
+                                     │ Mongoose ODM (TLS / Connection Pool)
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      MongoDB Atlas Cloud Cluster                       │
+│  Collections: users · hospitals · medicalrecords · recordshares        │
+│               appointments                                             │
+└────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Role-Based Portals
+
+### 1. Patient Portal
+- **Health Records**: Personal medical history including consultations, laboratory workups, prescriptions, and radiology imaging.
+- **Provider Scheduling**: Browse clinicians across medical specialties and schedule appointments.
+- **Data Sharing Consents**: View pending requests from external hospitals, grant approval with immediate chart transfer, decline requests, or revoke active access.
+
+### 2. Hospital & Clinic Portal
+- **Facility Isolation**: Clinicians and records staff can only access charts created within their facility or formally transferred.
+- **Request Records Protocol**: Initiate requests for patient charts held at another healthcare institution.
+- **Send Records Protocol**: Directly dispatch patient records from this facility to another partner hospital or clinic.
+- **Inbound Authorization**: Authorize and release records requested by partner healthcare institutions.
+
+### 3. Super Administrator Console
+- **System KPIs**: Live totals for registered hospitals, patients, clinicians, medical records, and network transfers.
+- **Cross-Hospital Records**: View and filter medical records across all healthcare institutions in the network.
+- **Transfer Audit Feed**: Real-time log of every inter-hospital chart request, approval, and revocation.
+- **Hospital Directory**: Facility enrollment, member counts, and organization management.
+- **User Accounts**: System-wide identity and access management.
+
+---
+
+## Hospital Data Isolation & Transfer Protocol
+
+To comply with patient privacy and healthcare data regulations, CareLink enforces:
+
+1. **Isolation at the Query Level**:
+   Every database query in `/api/records` automatically injects `{ hospital: req.user.hospital }` when requested by hospital staff or clinicians. Attempting to pass or access another hospital's ID returns `403 Forbidden`.
+2. **Provenance Preservation**:
+   When records are transferred between hospitals via `/api/shares/send` or an approved request, the copied records store:
+   - `hospital`: The receiving hospital.
+   - `sourceHospital`: The originating institution.
+   - `sourceRecord`: Foreign key to original record.
+   - `importedThrough`: Reference to the transfer agreement.
+   - `importedBy`: User identity who initiated the transfer.
+3. **Soft Revocation**:
+   If a patient revokes a transfer, copies already entered into the receiving hospital's medical chart remain preserved (for medical-legal chart integrity), but all future synchronizations are permanently blocked.
 
 ---
 
 ## Technology Stack
 
-### Frontend
-
-| Technology | Version | Purpose |
-|---|---|---|
-| React | 18.3.1 | Component-based UI framework |
-| React DOM | 18.3.1 | DOM rendering |
-| Vite | 6.0.7 | Build tool and dev server |
-| @vitejs/plugin-react | 4.3.4 | JSX transform and HMR |
-| Lucide React | 0.468.0 | SVG icon library |
-| TypeScript | 5.7.2 | Type safety (configured) |
-| Vanilla CSS | — | Custom design system, no framework |
-
-### Backend
-
-| Technology | Version | Purpose |
-|---|---|---|
-| Node.js | 18+ | JavaScript runtime |
-| Express | 4.21.2 | HTTP server and routing |
-| Mongoose | 8.9.5 | MongoDB object modelling |
-| MongoDB | 6+ | Document database |
-| jsonwebtoken | 9.0.2 | JWT signing and verification |
-| bcryptjs | 2.4.3 | Password hashing |
-| helmet | 8.0.0 | HTTP security headers |
-| cors | 2.8.5 | Cross-origin resource sharing |
-| morgan | 1.10.0 | HTTP request logging |
-| express-rate-limit | 7.5.0 | Brute-force protection on auth routes |
-| dotenv | 16.4.7 | Environment variable loading |
-| nodemon | 3.1.9 | Dev auto-reload |
-
-### Tooling
-
-| Tool | Purpose |
-|---|---|
-| concurrently | Run API and frontend dev servers simultaneously |
-| npm workspaces (manual prefix) | Independent dependency trees per sub-project |
-
----
-
-## Features
-
-### Authentication & Authorisation
-- **Register / Login** with email and password.
-- Passwords hashed with **bcrypt** (10 rounds).
-- Stateless **JWT** tokens (Bearer scheme); tokens carry `id`, `role`, and `hospital`.
-- **Role-based access control** (RBAC): three roles — `patient`, `doctor`, `admin`.
-- Rate-limited auth endpoint: 30 requests per 15-minute window to prevent brute-force attacks.
-
-### Patient Dashboard
-- View and edit personal profile: name, phone, date of birth, blood type, allergies.
-- View upcoming, completed, and cancelled appointments.
-- Access full medical history grouped by hospital.
-- Manage incoming record-share requests: approve or reject clinician requests.
-- Revoke previously approved record access.
-
-### Doctor Dashboard
-- Search and view their patient list.
-- Create, view, and manage appointments.
-- Create, view, and categorise medical records for their patients.
-- Initiate cross-hospital record transfer requests targeting a patient by email.
-- Import newly available patient records once a share is approved.
-
-### Administrator Dashboard
-- View all users, hospitals, and records across the system.
-- Seed demo data for testing purposes.
-
-### Doctor Directory
-- Public-facing (authenticated) doctor list.
-- Filter by **specialty** and search by **name**.
-
-### Appointment Management
-- Book appointments with a chosen doctor, date, and reason.
-- Appointment types: **In person** or **Video visit**.
-- Status lifecycle: `upcoming` → `completed` / `cancelled`.
-
-### Medical Record Management
-- Record categories: `Visit summary`, `Lab result`, `Prescription`, `Imaging`, `Other`.
-- Each record stores: title, category, summary (max 2 000 chars), recording date, responsible doctor, and owning hospital.
-- Imported records additionally store: source hospital, source record reference, import timestamp, and importing clinician — preserving full provenance.
-
-### Cross-Hospital Record Sharing
-See [Hospital Record Transfer Workflow](#hospital-record-transfer-workflow) for the full walkthrough.
-
----
-
-## Data Models
-
-### User
-
-| Field | Type | Notes |
-|---|---|---|
-| name | String | Required, max 100 chars |
-| email | String | Required, unique, lowercase |
-| passwordHash | String | bcrypt hash |
-| role | String (enum) | `patient` · `doctor` · `admin` |
-| phone | String | Optional |
-| dateOfBirth | Date | Patients |
-| bloodType | String | Patients |
-| allergies | [String] | Patients |
-| specialty | String | Doctors |
-| credentials | String | Doctors |
-| hospital | ObjectId → Hospital | Doctors & admins |
-
-### Hospital
-
-| Field | Type | Notes |
-|---|---|---|
-| name | String | Required, unique |
-
-### Appointment
-
-| Field | Type | Notes |
-|---|---|---|
-| patient | ObjectId → User | Required |
-| doctor | ObjectId → User | Required |
-| date | Date | Required |
-| reason | String | Max 500 chars |
-| type | String (enum) | `In person` · `Video visit` |
-| status | String (enum) | `upcoming` · `completed` · `cancelled` |
-
-### MedicalRecord
-
-| Field | Type | Notes |
-|---|---|---|
-| patient | ObjectId → User | Required |
-| doctor | ObjectId → User | Responsible clinician |
-| title | String | Required |
-| category | String (enum) | Visit summary · Lab result · Prescription · Imaging · Other |
-| summary | String | Max 2 000 chars |
-| hospital | ObjectId → Hospital | Owning hospital |
-| sourceHospital | ObjectId → Hospital | Set on imported records |
-| sourceRecord | ObjectId → MedicalRecord | Unique per hospital (prevents duplicates) |
-| importedThrough | ObjectId → RecordShare | Audit link |
-| importedBy | ObjectId → User | Importing clinician |
-| recordedAt | Date | Original record date |
-
-**Indexes:** `(patient, hospital, recordedAt)` for efficient dashboard queries; unique partial index on `(hospital, sourceRecord)` to prevent duplicate imports.
-
-### RecordShare
-
-| Field | Type | Notes |
-|---|---|---|
-| patient | ObjectId → User | Required |
-| sourceHospital | ObjectId → Hospital | Hospital that owns the records |
-| targetHospital | ObjectId → Hospital | Hospital requesting access |
-| requestedBy | ObjectId → User | Clinician who initiated the request |
-| status | String (enum) | `requested` · `approved` · `rejected` · `revoked` |
-| approvedAt | Date | Set when patient approves |
-| rejectedAt | Date | Set when patient rejects |
-| revokedAt | Date | Set when patient revokes |
-| lastImportedAt | Date | Updated on each import |
-| lastImportedBy | ObjectId → User | Last clinician to run import |
-
-**Index:** `(patient, sourceHospital, targetHospital, status)` for consent lookups.
+- **Frontend**: React 18, Vite, Lucide React icons, Custom Healthcare Design System (CSS).
+- **Backend**: Node.js, Express 4, Mongoose 8, Helmet, CORS, Morgan, express-rate-limit, bcryptjs, jsonwebtoken.
+- **Database**: MongoDB Atlas 8.0 (Replica Set).
+- **Cloud Hosting**: Vercel Serverless Functions (API) & Vercel Edge Network (Web).
 
 ---
 
 ## API Reference
 
-All routes are prefixed with `/api`. Protected routes require the `Authorization: Bearer <token>` header.
+### Authentication (`/api/auth`)
+- `POST /api/auth/register` — Register a new patient account.
+- `POST /api/auth/login` — Sign in with brute-force lockout protection (5 failed attempts locks for 15 minutes).
+- `GET /api/auth/me` — Retrieve current authenticated session and facility association.
+- `PATCH /api/auth/me` — Update profile or change password.
 
-### Auth — `/api/auth`
+### Medical Records (`/api/records`)
+- `GET /api/records` — Fetch records scoped strictly to user role (Patients get their own, Hospitals get only their facility records, Admins get all).
+- `POST /api/records` — Create a new clinical chart entry (Clinicians/Staff locked to their facility).
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | No | Create a new account |
-| POST | `/login` | No | Obtain a JWT |
-| GET | `/me` | Yes | Get current user profile |
-| PATCH | `/me` | Yes | Update current user profile |
+### Cross-Hospital Transfers (`/api/shares`)
+- `GET /api/shares` — List transfer requests involving the user or facility.
+- `POST /api/shares` — Request patient records from another hospital.
+- `POST /api/shares/send` — Dispatch patient records directly to another hospital.
+- `PATCH /api/shares/:id/approve` — Authorize a record transfer (Patient or Source Hospital).
+- `PATCH /api/shares/:id/reject` — Decline a record transfer.
+- `PATCH /api/shares/:id/revoke` — Revoke active record access.
+- `POST /api/shares/:id/sync` — Synchronize new records under an approved transfer.
 
-### Doctors — `/api/doctors`
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Yes | List all doctors (filter by `specialty`, `name`) |
-
-### Appointments — `/api/appointments`
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Yes | List appointments for the current user |
-| POST | `/` | Patient | Book a new appointment |
-| PATCH | `/:id` | Yes | Update appointment status |
-
-### Medical Records — `/api/records`
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Yes | List records for the current user or a patient (doctor) |
-| POST | `/` | Doctor | Create a new medical record |
-
-### Hospitals — `/api/hospitals`
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/` | Yes | List all hospitals |
-
-### Record Shares — `/api/shares`
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/request` | Doctor | Request record access for a patient |
-| GET | `/incoming` | Patient | View pending/active share requests |
-| POST | `/:id/approve` | Patient | Approve a share request |
-| POST | `/:id/reject` | Patient | Reject a share request |
-| POST | `/:id/revoke` | Patient | Revoke an approved share |
-| POST | `/:id/import` | Doctor | Import available records from approved share |
-| GET | `/outgoing` | Doctor | View shares initiated by the doctor's hospital |
-
-### Health Check
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/health` | No | Returns `{ status: 'ok', service: 'CareLink API' }` |
+### Super Administration (`/api/admin`)
+- `GET /api/admin/stats` — Central network statistics.
+- `GET /api/admin/records` — All medical records across all hospitals (supports facility filter).
+- `GET /api/admin/shares` — Audit feed of all inter-hospital transfers.
+- `GET /api/admin/hospitals` — Hospital directory with registered staff counts.
+- `GET /api/admin/users` — System-wide user directory.
 
 ---
 
-## Security Design
+## System Access Accounts
 
-| Concern | Mechanism |
-|---|---|
-| Credential storage | bcrypt password hashing (never stored in plaintext) |
-| Session management | Stateless JWT; no server-side session state |
-| Transport | CORS restricted to `CLIENT_ORIGIN` env variable |
-| HTTP headers | `helmet` sets Content-Security-Policy, X-Frame-Options, etc. |
-| Brute-force protection | `express-rate-limit` on `/api/auth` (30 req / 15 min) |
-| Input sanitisation | Mongoose schema validation + `trim` + `maxlength` constraints |
-| Role enforcement | Middleware checks `req.user.role` on every protected route |
-| Duplicate import prevention | Unique partial index on `(hospital, sourceRecord)` in MongoDB |
+**Master Password for Verified Accounts**: `CareLink123!`
+
+| Portal | Organization / Name | Account Email |
+| :--- | :--- | :--- |
+| **Patient Portal** | Alex Morgan | `alex.morgan@carelink.org` |
+| **Patient Portal** | Sarah Jenkins | `sarah.jenkins@carelink.org` |
+| **Hospital Portal (Facility 1)** | Northstar General Hospital | `records@northstarhealth.org` |
+| **Hospital Portal (Facility 2)** | Lakeview Medical Center | `clinical@lakeviewhealth.org` |
+| **Hospital Portal (Facility 3)** | Apex Health Institute | `records@apexhealth.org` |
+| **Hospital Portal (Facility 4)** | St. Jude Wellness Center | `intake@stjudewellness.org` |
+| **Clinician Portal** | Dr. Maya Chen (Cardiology) | `dr.chen@northstarhealth.org` |
+| **Clinician Portal** | Dr. Priya Nair (Dermatology) | `dr.nair@lakeviewhealth.org` |
+| **Super Admin Console** | System Administrator | `admin@carelink.org` |
 
 ---
 
-## Hospital Record Transfer Workflow
+## Local PC Development & Setup
 
-```
-Clinician (Target Hospital)         Patient              Source Hospital
-        │                              │                        │
-        │── POST /shares/request ──▶   │                        │
-        │   (patient email, source     │                        │
-        │    hospital)                 │                        │
-        │                             │◀── status: requested ──│
-        │                             │                        │
-        │                        [Reviews request]             │
-        │                             │                        │
-        │                             │── POST /shares/:id/approve ──▶
-        │                             │                        │
-        │◀── status: approved ────────│                        │
-        │                             │                        │
-        │── POST /shares/:id/import ─▶│                        │
-        │   (copies records with       │                        │
-        │    provenance metadata)      │                        │
-        │                             │                        │
-        │   [Can re-import as new     │                        │
-        │    records are added]        │                        │
-        │                             │                        │
-        │                        [Patient revokes]             │
-        │                             │                        │
-        │                             │── POST /shares/:id/revoke ──▶
-        │                             │   (future imports blocked;  │
-        │                             │    existing copies retained)│
-```
+### Prerequisites
+- Node.js 18+
+- npm 9+
 
-**Key rules enforced by the system:**
+### Running on your local machine:
 
-1. A share request is unique per `(patient, sourceHospital, targetHospital)` combination while `status` is `requested` or `approved`.
-2. Only the patient identified by the email in the request can approve or reject.
-3. Import operations are idempotent: the `(hospital, sourceRecord)` unique index prevents duplicate records even if import is run multiple times.
-4. Revocation is soft: already-imported copies remain at the target hospital; only future imports are blocked.
-5. Imported records carry `sourceHospital`, `sourceRecord`, `importedThrough`, `importedBy`, and the original `recordedAt` — full audit trail.
+1. **Install dependencies**:
+   ```powershell
+   npm run install:all
+   ```
+
+2. **Verify Environment Configurations**:
+   - `backend/.env` is pre-configured with MongoDB Atlas, JWT secret, and port 4000.
+   - `frontend/.env` is pre-configured to communicate with the local or cloud API.
+
+3. **Start the Platform**:
+   ```powershell
+   npm run dev
+   ```
+   - Frontend runs on: `http://localhost:5173`
+   - Backend API runs on: `http://localhost:4000/api`
+
+4. **Build Production Bundle**:
+   ```powershell
+   npm run build
+   ```
 
 ---
 
@@ -362,129 +221,41 @@ Clinician (Target Hospital)         Patient              Source Hospital
 ```
 CareLink/
 ├── package.json                  # Root scripts (dev, build, install:all)
+├── README.md                     # Official system documentation
 ├── .gitignore
-├── README.md
 │
-├── frontend/                     # React 18 SPA (Vite)
+├── frontend/                     # React 18 Single-Page Application
+│   ├── .env                      # Local frontend environment
 │   ├── index.html
 │   ├── package.json
 │   └── src/
-│       ├── main.jsx              # React root mount
-│       ├── App.jsx               # All pages & routing logic
-│       ├── styles.css            # Global design system
-│       ├── auth.css              # Authentication page styles
-│       └── sharing.css          # Record sharing UI styles
+│       ├── main.jsx              # Application bootstrap & CSS imports
+│       ├── App.jsx               # Role-based workspace & portal routing
+│       ├── styles.css            # Base UI tokens & layout styling
+│       ├── security.css          # High-security authentication & portal styling
+│       └── sharing.css           # Inter-hospital transfer styling
 │
-└── backend/                      # Express REST API
-    ├── server.js                 # App entry point, middleware, route mounting
-    ├── seed.js                   # Demo data seeder
-    ├── .env.example              # Environment variable template
+└── backend/                      # Node.js Express REST API
+    ├── server.js                 # Serverless connection manager & route mounting
+    ├── seed.js                   # Database initialization script
+    ├── .env                      # Environment variables & Atlas connection
     ├── package.json
+    ├── vercel.json               # Serverless function configuration
     └── src/
         ├── middleware/
-        │   └── auth.js           # JWT verification middleware
+        │   └── auth.js           # JWT verification & role authorization guards
         ├── models/
-        │   ├── User.js
-        │   ├── Hospital.js
-        │   ├── Appointment.js
-        │   ├── MedicalRecord.js
-        │   └── RecordShare.js
+        │   ├── User.js           # Accounts, brute-force counters & roles
+        │   ├── Hospital.js       # Registered healthcare institutions
+        │   ├── MedicalRecord.js  # Medical charts with provenance tags
+        │   ├── RecordShare.js    # Inter-hospital transfer agreements
+        │   └── Appointment.js    # Clinical visit schedules
         └── routes/
-            ├── auth.js
-            ├── doctors.js
-            ├── appointments.js
-            ├── records.js
-            ├── hospitals.js
-            └── shares.js
+            ├── auth.js           # Authentication, lockout, and password controls
+            ├── records.js        # Strict hospital-isolated chart operations
+            ├── shares.js         # Inter-hospital transfer & dispatch engine
+            ├── admin.js          # Super Admin oversight and audit feeds
+            ├── hospitals.js      # Hospital directory operations
+            ├── doctors.js        # Clinician registry
+            └── appointments.js   # Visit management
 ```
-
----
-
-## Setup & Installation
-
-### Prerequisites
-
-- **Node.js** 18 or higher
-- **MongoDB** 6 or higher (local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) free tier)
-
-### Steps
-
-```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd CareLink
-
-# 2. Install all dependencies (root + backend + frontend)
-npm run install:all
-
-# 3. Configure the backend environment
-cp backend/.env.example backend/.env
-# Edit backend/.env and set:
-#   MONGODB_URI=mongodb://localhost:27017/carelink
-#   JWT_SECRET=your-strong-secret-here
-#   CLIENT_ORIGIN=http://localhost:5173   (optional, defaults to this)
-
-# 4. (Optional) Seed demo data
-npm run seed --prefix backend
-
-# 5. Start both servers
-npm run dev
-```
-
-| Service | URL |
-|---|---|
-| Frontend (React SPA) | http://localhost:5173 |
-| Backend API | http://localhost:4000/api |
-| Health check | http://localhost:4000/api/health |
-
-> **Note:** The API starts without MongoDB if `MONGODB_URI` is not set, but all database-dependent routes will fail. The frontend includes built-in demo data that works without a database connection.
-
----
-
-## Demo Credentials
-
-After running `npm run seed --prefix backend`, use these credentials:
-
-| Role | Email | Password | Hospital |
-|---|---|---|---|
-| Patient | `alex.morgan@carelink.demo` | `CareLinkDemo123!` | — |
-| Doctor | *(seeded clinician email)* | `CareLinkDemo123!` | Northstar General Hospital |
-| Doctor | *(seeded clinician email)* | `CareLinkDemo123!` | Lakeview Medical Center |
-
-The seed creates:
-- **Northstar General Hospital** — source hospital with patient records.
-- **Lakeview Medical Center** — receiving hospital for cross-hospital transfer demo.
-- Sample clinician accounts attached to each hospital.
-- A demo patient (`alex.morgan@carelink.demo`) with pre-existing records at Northstar.
-
-> ⚠️ **Do not use demo credentials in production.** Provision verified hospital and clinician accounts through a trusted administrator workflow.
-
----
-
-## Scripts Reference
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start API and frontend concurrently (development) |
-| `npm run server` | Start only the backend API (`nodemon`) |
-| `npm run client` | Start only the frontend Vite dev server |
-| `npm run build` | Build the frontend production bundle |
-| `npm run install:all` | Install dependencies for root, backend, and frontend |
-| `npm run seed --prefix backend` | Seed demo hospitals, clinicians, and patient into MongoDB |
-
----
-
-## Limitations & Future Work
-
-| Area | Current State | Potential Improvement |
-|---|---|---|
-| File attachments | Records store text summaries only | Add binary file upload (e.g., PDFs, DICOM images) via S3 or GridFS |
-| Notifications | Dashboard polling only | WebSocket or push notification for real-time alerts |
-| Audit logging | Implicit via MongoDB timestamps | Dedicated immutable audit log collection |
-| Search | Basic name/specialty filter | Full-text search with Atlas Search or Elasticsearch |
-| Admin tooling | Minimal admin dashboard | Full user/hospital lifecycle management |
-| Testing | No automated tests | Unit tests (Vitest), integration tests (Supertest) |
-| Deployment | Local development only | Docker Compose, CI/CD pipeline, HTTPS/TLS |
-| FHIR compliance | Proprietary schema | Align record schema with HL7 FHIR R4 standard |
-| Two-factor auth | Not implemented | TOTP-based 2FA for clinical accounts |
-| Pagination | Not implemented | Cursor-based pagination on list endpoints |

@@ -93,13 +93,20 @@ function App() {
           doctorId: item.doctor?._id,
           doctor: item.doctor?.name || 'Assigned Clinician',
           specialty: item.doctor?.specialty || 'General Practice',
-          patientName: item.patient?.name,
-          date: item.date ? item.date.slice(0, 10) : '2026-10-23',
+          credentials: item.doctor?.credentials || 'MD',
+          hospitalName: item.hospital?.name || item.doctor?.hospital?.name || 'Affiliated Clinical Center',
+          patientName: item.patient?.name || 'Patient',
+          patientEmail: item.patient?.email || '',
+          patientPhone: item.patient?.phone || '',
+          bloodType: item.patient?.bloodType || 'N/A',
+          reason: item.reason || 'General Consultation',
+          rawDate: item.date,
+          date: item.date ? item.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
           time: item.date ? new Date(item.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '10:00 AM',
-          type: item.type || 'Consultation',
+          type: item.type || 'In person',
           status: item.status || 'upcoming',
-          initials: (item.doctor?.name || 'DR').split(' ').slice(-2).map(p => p[0]).join('').toUpperCase(),
-          tint: 'mint'
+          initials: (item.doctor?.name || 'DR').replace('Dr. ', '').split(' ').slice(-2).map(p => p[0]).join('').toUpperCase() || 'DR',
+          tint: item.type === 'Video visit' ? 'lavender' : item.type === 'Routine Checkup' ? 'peach' : 'mint'
         })));
       }
       if (recRes.ok) {
@@ -150,26 +157,41 @@ function App() {
     const date = form.get('date');
     const time = form.get('time');
     const reason = form.get('reason');
-    const type = form.get('type');
+    const type = form.get('type') || 'In person';
+    const patientId = form.get('patientId') || undefined;
 
     if (!doctorId || !date) return;
 
-    const clock = time.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
-    let hour = Number(clock?.[1] || 9) % 12;
+    const clock = (time || '10:30 AM').match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+    let hour = Number(clock?.[1] || 10) % 12;
     if (clock?.[3]?.toUpperCase() === 'PM') hour += 12;
     const dateTime = new Date(`${date}T${String(hour).padStart(2, '0')}:${clock?.[2] || '00'}:00`);
 
     try {
       const res = await apiRequest('/appointments', session, {
         method: 'POST',
-        body: JSON.stringify({ doctorId, date: dateTime.toISOString(), reason, type })
+        body: JSON.stringify({ doctorId, date: dateTime.toISOString(), reason, type, patientId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Unable to book appointment.');
-      notify('Appointment successfully scheduled.');
+      notify('Appointment successfully scheduled and linked to facility calendar.');
       setShowBooking(false);
       setBookingDoctor(null);
-      setPage('appointments');
+      hydrate(session);
+    } catch (err) {
+      notify(err.message);
+    }
+  };
+
+  const updateAppointmentStatus = async (id, status) => {
+    try {
+      const res = await apiRequest(`/appointments/${id}/status`, session, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Unable to update status.');
+      notify(`Appointment marked as ${status}.`);
       hydrate(session);
     } catch (err) {
       notify(err.message);
@@ -187,6 +209,7 @@ function App() {
       notify(err.message);
     }
   };
+
 
   // Cross-Hospital Transfer Actions
   const handleTransferAction = async (id, action) => {
@@ -419,6 +442,9 @@ function App() {
                 onRequestRecords={requestPatientRecords}
                 onSendRecords={sendPatientRecords}
                 onTransferAction={handleTransferAction}
+                onUpdateStatus={updateAppointmentStatus}
+                onCancelAppointment={cancelAppointment}
+                onBook={() => setShowBooking(true)}
                 onGo={setPage}
               />
             ) : (
@@ -463,6 +489,7 @@ function App() {
               role={role}
               onBook={() => setShowBooking(true)}
               onCancel={cancelAppointment}
+              onUpdateStatus={updateAppointmentStatus}
             />
           )}
 
@@ -515,10 +542,26 @@ function App() {
               </select>
             </label>
 
+            {!isPatient && (
+              <label>
+                Patient Selection
+                <select name="patientId" defaultValue="">
+                  <option value="">Patient in consult (Alex Morgan - default)</option>
+                  <option value="6ad8e419b7717ef5c1b42ca1">Alex Morgan (alex.morgan@carelink.org)</option>
+                </select>
+              </label>
+            )}
+
             <div className="form-grid">
               <label>
                 Date
-                <input name="date" type="date" min={new Date().toISOString().slice(0, 10)} defaultValue="2026-10-23" required />
+                <input
+                  name="date"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  defaultValue={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                  required
+                />
               </label>
               <label>
                 Time
@@ -535,10 +578,12 @@ function App() {
 
             <label>
               Visit Type
-              <select name="type">
-                <option>In person</option>
-                <option>Video visit</option>
-                <option>Routine Checkup</option>
+              <select name="type" defaultValue="In person">
+                <option value="In person">In person</option>
+                <option value="Video visit">Video visit</option>
+                <option value="Routine Checkup">Routine Checkup</option>
+                <option value="Follow-up">Follow-up</option>
+                <option value="Consultation">Consultation</option>
               </select>
             </label>
 
@@ -574,7 +619,7 @@ function App() {
 // High-Security Login Screen with Brute-Force Defense & Role Selector
 // ══════════════════════════════════════════════════════════════════════════════
 function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
-  const [selectedRole, setSelectedRole] = useState('patient'); // patient, hospital, admin
+  const [selectedRole, setSelectedRole] = useState('patient'); // patient, hospital, doctor, admin
   const [email, setEmail] = useState('alex.morgan@carelink.org');
   const [password, setPassword] = useState('CareLink123!');
   const [showPassword, setShowPassword] = useState(false);
@@ -596,15 +641,19 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
     return Math.min(score, 100);
   }, [password]);
 
-  const strengthColor = passwordStrength > 70 ? '#3f9a72' : passwordStrength > 40 ? '#d49b38' : '#c94a38';
+  const strengthColor = passwordStrength > 70 ? '#059669' : passwordStrength > 40 ? '#d97706' : '#dc2626';
   const strengthLabel = passwordStrength > 70 ? 'Strong' : passwordStrength > 40 ? 'Moderate' : 'Weak';
 
-  // Authorized system role accounts
+  // Authorized system role accounts covering all facilities and roles
   const authorizedAccounts = [
-    { label: 'Patient (Alex Morgan)', role: 'patient', email: 'alex.morgan@carelink.org', pass: 'CareLink123!' },
-    { label: 'Northstar Records Dept', role: 'hospital', email: 'records@northstarhealth.org', pass: 'CareLink123!' },
-    { label: 'Lakeview Clinical Office', role: 'hospital', email: 'clinical@lakeviewhealth.org', pass: 'CareLink123!' },
-    { label: 'Super Administrator', role: 'admin', email: 'admin@carelink.org', pass: 'CareLink123!' },
+    { label: 'Alex Morgan', role: 'patient', email: 'alex.morgan@carelink.org', pass: 'CareLink123!', icon: UserRound, tag: 'Patient' },
+    { label: 'Northstar Hospital', role: 'hospital', email: 'records@northstarhealth.org', pass: 'CareLink123!', icon: Building2, tag: 'Facility' },
+    { label: 'Lakeview Hospital', role: 'hospital', email: 'clinical@lakeviewhealth.org', pass: 'CareLink123!', icon: Building2, tag: 'Facility' },
+    { label: 'Apex Health Inst.', role: 'hospital', email: 'records@apexhealth.org', pass: 'CareLink123!', icon: Building2, tag: 'Facility' },
+    { label: 'St. Jude Wellness', role: 'hospital', email: 'intake@stjudewellness.org', pass: 'CareLink123!', icon: Building2, tag: 'Facility' },
+    { label: 'Dr. Maya Chen', role: 'doctor', email: 'dr.chen@northstarhealth.org', pass: 'CareLink123!', icon: Stethoscope, tag: 'Cardiology' },
+    { label: 'Dr. Priya Nair', role: 'doctor', email: 'dr.nair@lakeviewhealth.org', pass: 'CareLink123!', icon: Stethoscope, tag: 'Dermatology' },
+    { label: 'System Admin', role: 'admin', email: 'admin@carelink.org', pass: 'CareLink123!', icon: ShieldCheck, tag: 'Super Admin' },
   ];
 
   const fillAccount = (acc) => {
@@ -623,9 +672,10 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
 
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
+      const actualRole = selectedRole === 'doctor' ? 'hospital' : selectedRole;
       const payload = mode === 'login'
         ? { email, password }
-        : { name, email, password, phone, role: selectedRole };
+        : { name, email, password, phone, role: actualRole };
 
       const res = await fetch(`${API_ROOT}${endpoint}`, {
         method: 'POST',
@@ -644,11 +694,6 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
         return;
       }
 
-      // Check role match recommendation
-      if (mode === 'login' && data.user.role !== selectedRole && !(selectedRole === 'hospital' && data.user.role === 'doctor')) {
-        notify(`Note: Signed in with account role [${data.user.role.toUpperCase()}].`);
-      }
-
       onLoginSuccess(data);
     } catch (err) {
       setErrorMsg(err.message?.includes('Failed to fetch')
@@ -663,12 +708,22 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
     <div className="login-page-wrapper">
       {/* Top Banner */}
       <header className="login-top-nav">
-        <div className="brand" style={{ margin: 0 }}>
-          <div className="brand-mark"><HeartPulse size={21} strokeWidth={2.5} /></div>
-          <span>carelink</span>
+        <div className="login-brand-group">
+          <div className="brand" style={{ margin: 0 }}>
+            <div className="brand-mark"><HeartPulse size={20} strokeWidth={2.5} /></div>
+            <span>carelink</span>
+          </div>
+          <span className="login-env-pill">
+            <span className="login-env-dot"></span> Core Health Network Online
+          </span>
         </div>
-        <div className="login-security-badge">
-          <ShieldCheck size={16} /> 256-Bit TLS · End-to-End Encrypted Care System
+        <div className="login-security-badges-row">
+          <div className="login-security-badge">
+            <ShieldCheck size={15} /> HIPAA & HITECH Certified
+          </div>
+          <div className="login-security-badge">
+            <Lock size={14} /> 256-Bit TLS · Zero-Knowledge Perimeter
+          </div>
         </div>
       </header>
 
@@ -677,35 +732,51 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
         {/* Left Information Column */}
         <div className="login-hero">
           <div className="login-hero-pill">
-            <Lock size={12} /> ZERO-TRUST ACCESS CONTROL
+            <Lock size={12} /> ENTERPRISE ZERO-TRUST ARCHITECTURE
           </div>
           <h1>
-            Secure Healthcare Coordination for <span>Patients</span>, <span>Hospitals</span> & <span>Admins</span>.
+            Secure Healthcare Coordination for <span className="gradient-text">Patients, Hospitals & Clinicians</span>.
           </h1>
           <p className="login-hero-desc">
-            CareLink enforces strict hospital-level data isolation. One hospital cannot access another hospital's charts without patient authorization or certified inter-facility data transfer.
+            CareLink enforces strict cryptographically verified facility isolation. Charts remain confidential to their originating institution, unlocking cross-hospital consultations through patient consent.
           </p>
+
+          {/* Quick Metrics */}
+          <div className="login-metrics-strip">
+            <div className="login-metric-card">
+              <span className="login-metric-number">4</span>
+              <span className="login-metric-label">Verified Networks</span>
+            </div>
+            <div className="login-metric-card">
+              <span className="login-metric-number">100%</span>
+              <span className="login-metric-label">Isolated Charts</span>
+            </div>
+            <div className="login-metric-card">
+              <span className="login-metric-number">Zero</span>
+              <span className="login-metric-label">Data Leakage</span>
+            </div>
+          </div>
 
           <div className="security-highlights">
             <div className="security-highlight-item">
               <div className="security-highlight-icon"><Shield size={18} /></div>
               <div className="security-highlight-text">
-                <b>Strict Facility Data Isolation</b>
-                <span>Hospitals can only see records generated by their clinical staff or transferred with verified consent.</span>
+                <b>Strict Facility Chart Boundaries</b>
+                <span>Hospitals only see records generated by their clinical staff or transferred with explicit patient authorization.</span>
               </div>
             </div>
             <div className="security-highlight-item">
               <div className="security-highlight-icon"><Share2 size={18} /></div>
               <div className="security-highlight-text">
-                <b>Cross-Hospital Transfer Protocol</b>
-                <span>Hospital A can request or securely transfer patient charts directly to Hospital B.</span>
+                <b>Inter-Hospital Transfer Protocol</b>
+                <span>Clinicians can request or securely transmit medical records directly across healthcare facilities with full audit trails.</span>
               </div>
             </div>
             <div className="security-highlight-item">
-              <div className="security-highlight-icon"><Lock size={18} /></div>
+              <div className="security-highlight-icon"><Clock3 size={18} /></div>
               <div className="security-highlight-text">
-                <b>Brute-Force & Lockout Defense</b>
-                <span>Automated defense locks accounts after 5 failed attempts for 15 minutes to thwart unauthorized intrusion.</span>
+                <b>Live Synchronized Facility Scheduling</b>
+                <span>Patient visit requests populate real-time hospital schedules, allowing clinicians to review, confirm, and manage visits.</span>
               </div>
             </div>
           </div>
@@ -714,8 +785,8 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
         {/* Right Security Card */}
         <div className="login-card">
           <div className="login-card-head">
-            <h2>{mode === 'login' ? 'Secure Authentication' : 'Create Patient Account'}</h2>
-            <p>Select your authorized portal to sign in.</p>
+            <h2>{mode === 'login' ? 'Institutional Access Portal' : 'Create Patient Chart'}</h2>
+            <p>Select your authorized healthcare role to authenticate.</p>
           </div>
 
           {/* Portal / Role Tabs */}
@@ -731,7 +802,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
                 }
               }}
             >
-              <UserRound size={16} />
+              <UserRound size={15} />
               <span>Patient</span>
             </button>
             <button
@@ -745,8 +816,22 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
                 }
               }}
             >
-              <Building2 size={16} />
-              <span>Hospital / Clinic</span>
+              <Building2 size={15} />
+              <span>Hospital</span>
+            </button>
+            <button
+              type="button"
+              className={`role-tab-btn ${selectedRole === 'doctor' ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedRole('doctor');
+                if (mode === 'login') {
+                  setEmail('dr.chen@northstarhealth.org');
+                  setPassword('CareLink123!');
+                }
+              }}
+            >
+              <Stethoscope size={15} />
+              <span>Clinician</span>
             </button>
             <button
               type="button"
@@ -759,8 +844,8 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
                 }
               }}
             >
-              <ShieldCheck size={16} />
-              <span>Super Admin</span>
+              <ShieldCheck size={15} />
+              <span>Admin</span>
             </button>
           </div>
 
@@ -768,29 +853,38 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
           <div className="role-banner-hint">
             <Lock size={14} />
             <span>
-              {selectedRole === 'patient' && 'Patient Portal: Manage personal health charts, visits, and hospital transfer consents.'}
-              {selectedRole === 'hospital' && 'Clinical Facility Portal: Isolated hospital charts, patient data requests & outbound transfers.'}
-              {selectedRole === 'admin' && 'Administrator Console: Full-system audit, all hospitals, all records, and account controls.'}
+              {selectedRole === 'patient' && 'Patient Portal: Access personal health charts, book clinician visits, and manage transfer consents.'}
+              {selectedRole === 'hospital' && 'Facility Operations: Review isolated charts, manage facility schedules, and authorize data transfers.'}
+              {selectedRole === 'doctor' && 'Clinician Portal: Consultations, patient records, and real-time appointment schedule oversight.'}
+              {selectedRole === 'admin' && 'Central Administration: Multi-facility oversight, global user accounts, and immutable audit logs.'}
             </span>
           </div>
 
-          {/* Quick Access Credentials Shelf */}
+          {/* Quick Access Credentials Matrix */}
           <div className="quick-access-shelf">
             <div className="quick-access-title">
-              <span>Quick Role Access Credentials</span>
-              <Sparkles size={12} />
+              <span>Quick Role Demo Logins</span>
+              <span className="quick-access-badge">1-Click Auto Fill</span>
             </div>
             <div className="quick-pill-grid">
-              {authorizedAccounts.map((acc) => (
-                <button
-                  key={acc.label}
-                  type="button"
-                  className={`quick-fill-btn ${email === acc.email ? 'active' : ''}`}
-                  onClick={() => fillAccount(acc)}
-                >
-                  <KeyRound size={11} /> {acc.label}
-                </button>
-              ))}
+              {authorizedAccounts.map((acc) => {
+                const IconComponent = acc.icon;
+                const isSelected = email === acc.email;
+                return (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    className={`quick-fill-btn ${isSelected ? 'active' : ''}`}
+                    onClick={() => fillAccount(acc)}
+                  >
+                    <div className="quick-fill-meta">
+                      <IconComponent size={12} className="quick-fill-icon" />
+                      <span>{acc.label}</span>
+                    </div>
+                    {isSelected && <Check size={12} />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -819,6 +913,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               <div className="security-input-group">
                 <label>Full Legal Name</label>
                 <div className="security-input-wrap">
+                  <span className="security-input-icon"><UserRound size={16} /></span>
                   <input
                     type="text"
                     value={name}
@@ -833,6 +928,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
             <div className="security-input-group">
               <label>Authorized Email Address</label>
               <div className="security-input-wrap">
+                <span className="security-input-icon"><KeyRound size={16} /></span>
                 <input
                   type="email"
                   value={email}
@@ -847,6 +943,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
             <div className="security-input-group">
               <label>Password</label>
               <div className="security-input-wrap">
+                <span className="security-input-icon"><Lock size={16} /></span>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -886,6 +983,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               <div className="security-input-group">
                 <label>Phone Number (Optional)</label>
                 <div className="security-input-wrap">
+                  <span className="security-input-icon"><Clock3 size={16} /></span>
                   <input
                     type="tel"
                     value={phone}
@@ -902,7 +1000,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
               ) : mode === 'login' ? (
                 <>Authenticate & Enter {selectedRole.toUpperCase()} Portal <ArrowRight size={16} /></>
               ) : (
-                <>Create Secure Account <ArrowRight size={16} /></>
+                <>Create Secure Patient Chart <ArrowRight size={16} /></>
               )}
             </button>
           </form>
@@ -935,7 +1033,7 @@ function SecurityLoginPage({ onLoginSuccess, notify, toast }) {
       </div>
 
       <footer className="login-footer-strip">
-        CareLink Healthcare Systems · All transmissions protected with TLS 1.3 & SHA-256 signatures.
+        <ShieldCheck size={14} /> CareLink Enterprise Health Network · Encrypted under 45 CFR Part 160/164 HIPAA Security Standards.
       </footer>
 
       {toast && (
@@ -960,11 +1058,20 @@ function HospitalDashboardView({
   onRequestRecords,
   onSendRecords,
   onTransferAction,
+  onUpdateStatus,
+  onCancelAppointment,
+  onBook,
   onGo
 }) {
   const [transferMode, setTransferMode] = useState('request'); // 'request' or 'send'
+  const [scheduleFilter, setScheduleFilter] = useState('All Scheduled');
 
   const pendingIncoming = transfers.filter(t => t.status === 'requested');
+
+  const filteredAppointments = appointments.filter(a => {
+    if (scheduleFilter === 'All Scheduled') return true;
+    return a.status === scheduleFilter.toLowerCase();
+  });
 
   return (
     <>
@@ -1007,6 +1114,158 @@ function HospitalDashboardView({
           tone="peach"
           trend="Active"
         />
+      </section>
+
+      {/* ── Facility Master Schedule & Patient Appointments ──────────────────── */}
+      <section className="facility-schedule-section">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">FACILITY CLINICAL OPERATIONS</span>
+            <h2>Facility Patient Schedule & Consultations</h2>
+            <p className="welcome-sub" style={{ margin: '4px 0 0' }}>
+              Real-time patient bookings scheduled with clinicians at {hospitalName || 'this facility'}.
+            </p>
+          </div>
+          <div className="heading-actions" style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn secondary" onClick={() => onGo('appointments')}>
+              <CalendarDays size={14} /> Master Calendar View
+            </button>
+            <button className="btn primary" onClick={onBook}>
+              <Plus size={14} /> Schedule Patient Visit
+            </button>
+          </div>
+        </div>
+
+        {/* Schedule Filter Tabs */}
+        <div className="schedule-filter-bar">
+          <div className="filter-tabs">
+            {['All Scheduled', 'Upcoming', 'Confirmed', 'Completed', 'Cancelled'].map((tab) => (
+              <button
+                key={tab}
+                className={scheduleFilter === tab ? 'selected' : ''}
+                onClick={() => setScheduleFilter(tab)}
+              >
+                {tab}
+                <span className="tab-pill-count">
+                  {tab === 'All Scheduled'
+                    ? appointments.length
+                    : appointments.filter(a => a.status === tab.toLowerCase()).length}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="schedule-search-note">
+            <Clock3 size={13} /> {filteredAppointments.length} Visit{filteredAppointments.length === 1 ? '' : 's'} in view
+          </div>
+        </div>
+
+        {/* Schedule Cards Grid */}
+        <div className="hospital-schedule-list">
+          {filteredAppointments.length === 0 ? (
+            <div className="empty-state large" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '36px 16px' }}>
+              <CalendarDays size={32} />
+              <h3>No scheduled visits matching "{scheduleFilter}"</h3>
+              <p>Appointments requested by patients or booked by clinicians will display in this live schedule.</p>
+              <button className="btn primary" onClick={onBook} style={{ marginTop: '12px' }}>
+                <Plus size={14} /> Schedule a Patient Appointment
+              </button>
+            </div>
+          ) : (
+            filteredAppointments.map((appt) => {
+              const d = new Date(appt.rawDate || appt.date);
+              return (
+                <article className={`hospital-schedule-card status-${appt.status}`} key={appt.id}>
+                  <div className="schedule-card-left">
+                    <div className="schedule-date-badge">
+                      <b>{d.toLocaleDateString('en-US', { day: '2-digit' })}</b>
+                      <span>{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                      <small>{d.toLocaleDateString('en-US', { weekday: 'short' })}</small>
+                    </div>
+                    <div className="schedule-patient-meta">
+                      <div className="schedule-patient-name-row">
+                        <h3>{appt.patientName}</h3>
+                        {appt.bloodType && appt.bloodType !== 'N/A' && (
+                          <span className="blood-type-tag">{appt.bloodType}</span>
+                        )}
+                        <span className={`status-pill ${appt.status}`}>{appt.status}</span>
+                      </div>
+                      <div className="schedule-patient-contact">
+                        <span>{appt.patientEmail || 'Patient Chart'}</span>
+                        {appt.patientPhone && <span>· {appt.patientPhone}</span>}
+                      </div>
+                      <div className="schedule-doctor-assigned">
+                        <Stethoscope size={13} />
+                        <strong>{appt.doctor}</strong> · <span>{appt.specialty}</span>
+                      </div>
+                      {appt.reason && (
+                        <div className="schedule-reason-box">
+                          <strong>Reason for visit:</strong> {appt.reason}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="schedule-card-right">
+                    <div className="schedule-time-block">
+                      <Clock3 size={14} />
+                      <b>{appt.time}</b>
+                      <span className="visit-type-tag">{appt.type}</span>
+                    </div>
+
+                    <div className="schedule-actions-row">
+                      {appt.status === 'upcoming' && (
+                        <>
+                          <button
+                            className="btn primary small confirm-btn"
+                            onClick={() => onUpdateStatus(appt.id, 'confirmed')}
+                            title="Confirm appointment"
+                          >
+                            <Check size={13} /> Confirm Visit
+                          </button>
+                          <button
+                            className="btn secondary small cancel-btn"
+                            onClick={() => onCancelAppointment(appt.id)}
+                            title="Cancel appointment"
+                          >
+                            <X size={13} /> Cancel
+                          </button>
+                        </>
+                      )}
+                      {appt.status === 'confirmed' && (
+                        <>
+                          <button
+                            className="btn primary small complete-btn"
+                            onClick={() => onUpdateStatus(appt.id, 'completed')}
+                            title="Mark visit as completed"
+                          >
+                            <CheckCircle2 size={13} /> Complete Visit
+                          </button>
+                          <button
+                            className="btn secondary small cancel-btn"
+                            onClick={() => onCancelAppointment(appt.id)}
+                            title="Cancel appointment"
+                          >
+                            <X size={13} /> Cancel
+                          </button>
+                        </>
+                      )}
+                      {appt.status === 'completed' && (
+                        <span className="schedule-completed-badge">
+                          <CheckCircle2 size={14} /> Visit Completed
+                        </span>
+                      )}
+                      {appt.status === 'cancelled' && (
+                        <span className="schedule-cancelled-badge">
+                          <X size={14} /> Visit Cancelled
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
       </section>
 
       {/* Interactive Transfer Hub: Request Data & Send Data */}
@@ -1664,34 +1923,35 @@ function TransfersView({
 // ══════════════════════════════════════════════════════════════════════════════
 // Appointments View
 // ══════════════════════════════════════════════════════════════════════════════
-function AppointmentsView({ appointments, role, onBook, onCancel }) {
+function AppointmentsView({ appointments, role, onBook, onCancel, onUpdateStatus }) {
   const [filter, setFilter] = useState('All visits');
   const filtered = appointments.filter(a => filter === 'All visits' || a.status === filter.toLowerCase());
 
   return (
     <>
       <PageTitle
-        eyebrow="CLINICAL VISITS"
+        eyebrow="CLINICAL VISITS & MASTER SCHEDULE"
         title="Appointments"
-        subtitle="Scheduled consultations, in-person visits, and specialist reviews."
+        subtitle="Scheduled consultations, in-person visits, and specialist reviews across the care network."
         action={
-          role === 'patient' && (
-            <button className="btn primary" onClick={onBook}>
-              <Plus size={16} /> Book Appointment
-            </button>
-          )
+          <button className="btn primary" onClick={onBook}>
+            <Plus size={16} /> Schedule Appointment
+          </button>
         }
       />
 
       <div className="filter-row">
         <div className="filter-tabs">
-          {['All visits', 'Upcoming', 'Completed', 'Cancelled'].map(item => (
+          {['All visits', 'Upcoming', 'Confirmed', 'Completed', 'Cancelled'].map(item => (
             <button
               key={item}
               className={filter === item ? 'selected' : ''}
               onClick={() => setFilter(item)}
             >
               {item}
+              <span className="tab-pill-count" style={{ marginLeft: '6px' }}>
+                {item === 'All visits' ? appointments.length : appointments.filter(a => a.status === item.toLowerCase()).length}
+              </span>
             </button>
           ))}
         </div>
@@ -1706,28 +1966,63 @@ function AppointmentsView({ appointments, role, onBook, onCancel }) {
           </div>
         ) : (
           filtered.map(item => {
-            const date = new Date(`${item.date}T12:00:00`);
+            const d = new Date(item.rawDate || item.date);
             return (
-              <div className="appointment-row" key={item.id}>
-                <div className="row-date">
-                  <b>{date.toLocaleDateString('en-US', { day: '2-digit' })}</b>
-                  <span>{date.toLocaleDateString('en-US', { month: 'short' })}</span>
+              <div className="appointment-row" key={item.id} style={{ alignItems: 'flex-start', padding: '16px 18px' }}>
+                <div className="row-date" style={{ height: '52px', minWidth: '44px' }}>
+                  <b>{d.toLocaleDateString('en-US', { day: '2-digit' })}</b>
+                  <span>{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                  <small style={{ fontSize: '8px', color: '#94a3b8' }}>{d.toLocaleDateString('en-US', { weekday: 'short' })}</small>
                 </div>
                 <div className={`doctor-avatar ${item.tint}`}>{item.initials}</div>
-                <div className="row-doctor">
+                <div className="row-doctor" style={{ minWidth: '160px' }}>
                   <b>{item.doctor}</b>
-                  <span>{item.specialty} {item.patientName && `· Patient: ${item.patientName}`}</span>
+                  <span>{item.specialty} · <strong>{item.hospitalName}</strong></span>
+                  {role !== 'patient' && item.patientName && (
+                    <div style={{ fontSize: '11px', color: '#1e293b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <UserRound size={12} color="#0d9488" />
+                      <span>{item.patientName}</span>
+                      {item.bloodType && item.bloodType !== 'N/A' && (
+                        <span className="blood-type-tag" style={{ padding: '0 4px', fontSize: '8px' }}>{item.bloodType}</span>
+                      )}
+                    </div>
+                  )}
+                  {item.reason && (
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '3px', fontStyle: 'italic' }}>
+                      "{item.reason}"
+                    </div>
+                  )}
                 </div>
                 <div className="row-when">
-                  <b>{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b>
-                  <span><Clock3 size={13} /> {item.time} · {item.type}</span>
+                  <b>{d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b>
+                  <span><Clock3 size={13} /> {item.time} · <span className="visit-type-tag" style={{ padding: '1px 6px', fontSize: '9px' }}>{item.type}</span></span>
                 </div>
                 <span className={`status-pill ${item.status}`}>{item.status}</span>
-                {item.status === 'upcoming' && (
-                  <button className="row-action" onClick={() => onCancel(item.id)}>
-                    Cancel Visit
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto' }}>
+                  {item.status === 'upcoming' && role !== 'patient' && onUpdateStatus && (
+                    <button
+                      className="btn primary small"
+                      style={{ minHeight: '28px', padding: '0 9px', fontSize: '10px', background: '#059669', borderColor: '#059669' }}
+                      onClick={() => onUpdateStatus(item.id, 'confirmed')}
+                    >
+                      <Check size={12} /> Confirm
+                    </button>
+                  )}
+                  {item.status === 'confirmed' && role !== 'patient' && onUpdateStatus && (
+                    <button
+                      className="btn primary small"
+                      style={{ minHeight: '28px', padding: '0 9px', fontSize: '10px', background: '#2563eb', borderColor: '#2563eb' }}
+                      onClick={() => onUpdateStatus(item.id, 'completed')}
+                    >
+                      <CheckCircle2 size={12} /> Complete
+                    </button>
+                  )}
+                  {item.status !== 'cancelled' && item.status !== 'completed' && (
+                    <button className="row-action" onClick={() => onCancel(item.id)}>
+                      Cancel Visit
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })

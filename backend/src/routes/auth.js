@@ -78,7 +78,10 @@ router.post('/login', async (req, res, next) => {
     if (rawEmail === 'alex.morgan@carelink.org') aliases.push('alex.morgan@carelink.demo');
     if (rawEmail === 'records@northstarhealth.org') aliases.push('staff.northstar@carelink.demo');
     if (rawEmail === 'clinical@lakeviewhealth.org') aliases.push('staff.lakeview@carelink.demo');
+    if (rawEmail === 'records@apexhealth.org') aliases.push('staff.apex@carelink.demo');
+    if (rawEmail === 'intake@stjudewellness.org') aliases.push('staff.stjude@carelink.demo');
     if (rawEmail === 'dr.chen@northstarhealth.org') aliases.push('maya.chen@carelink.demo');
+    if (rawEmail === 'dr.nair@lakeviewhealth.org') aliases.push('priya.nair@carelink.demo');
     if (rawEmail === 'admin@carelink.org') aliases.push('admin@carelink.com');
 
     const user = await User.findOne({ email: { $in: aliases } }).populate('hospital', 'name');
