@@ -36,7 +36,7 @@
 
 | Component | URL | Status |
 | :--- | :--- | :--- |
-| **Web Application** | [frontend-five-rosy-ccuw13vq3y.vercel.app](https://frontend-five-rosy-ccuw13vq3y.vercel.app) | Live |
+| **Web Application** | [carelink-network.vercel.app](https://carelink-network.vercel.app) | Live |
 | **REST API Server** | [backend-nine-beta-29.vercel.app/api](https://backend-nine-beta-29.vercel.app/api) | Live |
 | **API Health Check** | [backend-nine-beta-29.vercel.app/api/health](https://backend-nine-beta-29.vercel.app/api/health) | Live |
 | **Database Cluster** | MongoDB Atlas (Cluster 0, AWS) | Connected |
